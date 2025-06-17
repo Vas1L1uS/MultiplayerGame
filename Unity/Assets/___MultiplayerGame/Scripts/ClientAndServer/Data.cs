@@ -46,6 +46,11 @@ public class SClient
 
     public void Tick()
     {
+        if (Obj.transform.position.y < -10)
+        {
+            Obj.transform.position = Vector3.up * 5;
+        }
+
         Data.Position = new()
         {
             X = Obj.transform.position.x,
