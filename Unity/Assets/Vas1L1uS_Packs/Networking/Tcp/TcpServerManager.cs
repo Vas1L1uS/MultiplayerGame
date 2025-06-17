@@ -196,7 +196,7 @@ namespace MineServer.Networking.Tcp
                 {
                     TcpMessageProcessor processor = new(
                         stream,
-                        data => _output.ProcessClientRequest(clientId, data),
+                        data => _output.ProcessRequest(clientId, data),
                         $"{nameof(TcpServerManager)}:{clientId}"
                     );
 
@@ -218,7 +218,7 @@ namespace MineServer.Networking.Tcp
 
         public interface IOutput
         {
-            void ProcessClientRequest(string clientId, string data);
+            void ProcessRequest(string clientId, string data);
             void AddNewClient(string clientId);
             void RemoveClient(string clientId);
             void NewLog(string message);
