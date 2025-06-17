@@ -2,7 +2,10 @@ using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Animations;
+using UnityEngine.EventSystems;
 using Vas1L1uS_Packs.Networking.Tcp;
 
 namespace MultiplayerGame.Client.Root
@@ -22,19 +25,22 @@ namespace MultiplayerGame.Client.Root
         private GameObject _otherPlayerPrefab;
 
         private Vector3 _zeroWorldPosition;
-        private bool _isInputEnabled;
+
+        private Camera _camera;
 
         public void Dispose()
         {
+            _camera = null;
             _otherPlayers = null;
             _responseList = null;
             _tcpClientManager.Dispose();
             _tcpClientManager = null;
         }
 
-        public void Init(Vector3 zeroWorldPosition, bool isInputEnabled, GameObject playerPrefab, GameObject otherPlayerPrefab, string ip, int port)
+        public void Init(Camera camera, Vector3 zeroWorldPosition, GameObject playerPrefab, GameObject otherPlayerPrefab, string ip, int port)
         {
-            _isInputEnabled = isInputEnabled;
+            _camera = camera;
+
             _zeroWorldPosition = zeroWorldPosition;
 
             _playerPrefab = playerPrefab;
@@ -49,35 +55,9 @@ namespace MultiplayerGame.Client.Root
             _tcpClientManager.Init(this, _ip, _port);
         }
 
-        public void Tick(float deltaTime)
+        public void Tick(float deltaTime, Vector3 moveDirection)
         {
             ProcessResponseList();
-
-            if (!_isInputEnabled) return;
-
-            Vector3 moveDirection = new();
-
-            if (Input.GetKey(KeyCode.W))
-            {
-                moveDirection += Vector3.forward;
-            }
-
-            if (Input.GetKey(KeyCode.S))
-            {
-                moveDirection += Vector3.back;
-            }
-
-            if (Input.GetKey(KeyCode.A))
-            {
-                moveDirection += Vector3.left;
-            }
-
-            if (Input.GetKey(KeyCode.D))
-            {
-                moveDirection += Vector3.right;
-            }
-
-            if (moveDirection == Vector3.zero) return;
 
             Vec3 dir = new()
             {
@@ -129,6 +109,10 @@ namespace MultiplayerGame.Client.Root
                         case "start":
                             _clientId = body.Value<string>();
                             _player = GameObject.Instantiate(_playerPrefab);
+                            PositionConstraint positionConstraint = _camera.AddComponent<PositionConstraint>();
+                            positionConstraint.AddSource(new() { sourceTransform = _player.transform, weight = 1f });
+                            positionConstraint.translationOffset = new(0, _camera.transform.position.y, _camera.transform.position.z);
+                            positionConstraint.constraintActive = true;
                             break;
                         case "clients":
                             List<ClientData> clients = body.ToObject<List<ClientData>>();
